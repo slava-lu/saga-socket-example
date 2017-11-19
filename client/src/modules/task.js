@@ -1,6 +1,6 @@
 import io from 'socket.io-client';
 import {eventChannel} from 'redux-saga';
-import {take, call, put, fork, race, cancel, cancelled} from 'redux-saga/effects';
+import {take, call, put, fork, race, cancel, cancelled, all} from 'redux-saga/effects';
 import {delay} from 'redux-saga';
 import {createSelector} from 'reselect';
 
@@ -9,13 +9,13 @@ const START_CHANNEL = 'START_CHANNEL';
 const STOP_CHANNEL = 'STOP_CHANNEL';
 const CHANNEL_ON = 'CHANNEL_ON';
 const CHANNEL_OFF = 'CHANNEL_OFF';
-const SERVER_ERROR = 'SERVER_ERROR';
+const SERVER_ON = 'SERVER_ON';
+const SERVER_OFF = 'SERVER_OFF';
 
 const initialState = {
   taskList: [],
-  status: 'off',
-  error: false,
-
+  channelStatus: 'off',
+  serverStatus: 'unknown',
 };
 
 //We will keep list of tasks in this reducer
@@ -23,14 +23,16 @@ export default (state = initialState, action) => {
   const {taskList, error} = state;
   switch (action.type) {
     case CHANNEL_ON:
-      return {...state, status: 'on'};
+      return {...state, channelStatus: 'on'};
     case CHANNEL_OFF:
-      return {...state, status: 'off'};
+      return {...state, channelStatus: 'off', serverStatus: 'unknown'};
     case ADD_TASK:
       const updatedTaskList = [...taskList, action.payload];
       return {...state, taskList: updatedTaskList};
-    case SERVER_ERROR:
-      return {...state, error: action.payload};
+    case SERVER_OFF:
+      return {...state, serverStatus: 'off'};
+    case SERVER_ON:
+      return {...state, serverStatus: 'on'};
     default:
       return state;
   }
@@ -42,9 +44,9 @@ export const stopChannel = () => ({type: STOP_CHANNEL});
 //sorting function to show the latest tasks first
 const sortTasks = (task1, task2) => task2.taskID - task1.taskID;
 
-//selector to get only first 10 latest tasks
+//selector to get only first 5 latest tasks
 const taskSelector = state => state.taskReducer.taskList;
-const topTask = (allTasks) => allTasks.sort(sortTasks).slice(0, 10);
+const topTask = (allTasks) => allTasks.sort(sortTasks).slice(0, 5);
 export const topTaskSelector = createSelector(taskSelector, topTask);
 
 let socket;
@@ -54,6 +56,24 @@ const connect = () => {
   socket = io('http://localhost:3000');
   return new Promise((resolve) => {
     socket.on('connect', () => {
+      resolve(socket);
+    });
+  });
+};
+
+const disconnect = () => {
+  socket = io('http://localhost:3000');
+  return new Promise((resolve) => {
+    socket.on('disconnect', () => {
+      resolve(socket);
+    });
+  });
+};
+
+const reconnect = () => {
+  socket = io('http://localhost:3000');
+  return new Promise((resolve) => {
+    socket.on('reconnect', () => {
       resolve(socket);
     });
   });
@@ -74,28 +94,25 @@ const createSocketChannel = (socket) => eventChannel(
 
 //Saga to switch on channel.
 const listenServerSaga = function*() {
-  let socketChannel;
   try {
-    const {wsSocket, timeout} = yield race({
-      wsSocket: call(connect),
-      timeout: call(delay, 2000)
+    yield put({type: CHANNEL_ON});
+    const {timeout} = yield race({
+      connected: call(connect),
+      timeout: delay(2000)
     });
-
-    console.log('wsSocket', wsSocket);
-    console.log('timeout', timeout);
-
-    if (wsSocket) {
-      socketChannel = yield call(createSocketChannel, wsSocket);
-      yield put({type: CHANNEL_ON});
-    } else {
-      yield put({type: SERVER_ERROR, payload: "Server is down"});
+    if (timeout) {
+      yield put({type: SERVER_OFF});
     }
+    const socket = yield call(connect);
+    const socketChannel = yield call(createSocketChannel, socket);
+    yield put({type: SERVER_ON});
+
     while (true) {
       const payload = yield take(socketChannel);
       yield put({type: ADD_TASK, payload})
     }
   } catch (error) {
-    console.log(error);
+    console.log(error)
   }
   finally {
     if (yield cancelled()) {
@@ -103,6 +120,16 @@ const listenServerSaga = function*() {
       yield put({type: CHANNEL_OFF});
     }
   }
+};
+
+export const listenDisconnectSaga = function*() {
+  yield call(disconnect);
+  yield put({type: SERVER_OFF});
+};
+
+export const listenConnectSaga = function*() {
+  yield call(reconnect);
+  yield put({type: SERVER_ON});
 };
 
 //saga listens for start stop actions which can pe put in componentDidMount
