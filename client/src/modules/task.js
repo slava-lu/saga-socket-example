@@ -1,6 +1,7 @@
 import io from 'socket.io-client';
 import {eventChannel} from 'redux-saga';
 import {take, call, put, fork, race, cancel, cancelled} from 'redux-saga/effects';
+import {delay} from 'redux-saga';
 import {createSelector} from 'reselect';
 
 const ADD_TASK = 'ADD_TASK';
@@ -46,13 +47,14 @@ const taskSelector = state => state.taskReducer.taskList;
 const topTask = (allTasks) => allTasks.sort(sortTasks).slice(0, 10);
 export const topTaskSelector = createSelector(taskSelector, topTask);
 
+let socket;
+
 //Since  saga works with Promises we wrap socket connection function in Promise
-const connect = async() => {
-  const socket = io('http://localhost:3000');
-  return new Promise((resolve, reject) => {
+const connect = () => {
+  socket = io('http://localhost:3000');
+  return new Promise((resolve) => {
     socket.on('connect', () => {
       resolve(socket);
-      reject(socket)
     });
   });
 };
@@ -72,31 +74,43 @@ const createSocketChannel = (socket) => eventChannel(
 
 //Saga to switch on channel.
 const listenServerSaga = function*() {
+  let socketChannel;
   try {
-    const socket = yield call(connect);
-    const socketChannel = yield call(createSocketChannel, socket);
+    const {wsSocket, timeout} = yield race({
+      wsSocket: call(connect),
+      timeout: call(delay, 2000)
+    });
+
+    console.log('wsSocket', wsSocket);
+    console.log('timeout', timeout);
+
+    if (wsSocket) {
+      socketChannel = yield call(createSocketChannel, wsSocket);
+      yield put({type: CHANNEL_ON});
+    } else {
+      yield put({type: SERVER_ERROR, payload: "Server is down"});
+    }
     while (true) {
       const payload = yield take(socketChannel);
       yield put({type: ADD_TASK, payload})
     }
   } catch (error) {
-    yield put({type: SERVER_ERROR, payload: error});
+    console.log(error);
   }
   finally {
     if (yield cancelled()) {
+      socket.disconnect(true);
       yield put({type: CHANNEL_OFF});
     }
   }
 };
-
 
 //saga listens for start stop actions which can pe put in componentDidMount
 export const startStopChannel = function*() {
   let task;
   while (true) {
     yield take(START_CHANNEL);
-    yield put({type: CHANNEL_ON});
-    yield race({
+    const task = yield race({
       task: call(listenServerSaga),
       cancel: take(STOP_CHANNEL)
     });

@@ -6,7 +6,7 @@ const server = app.listen(3000);
 
 const io = socketIO(server);
 let i = 0;
-console.log('Server started')
+console.log('Server started');
 setInterval(() => i++, 2000);
 
 io.on("connection", (socket) => {
