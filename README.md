@@ -15,8 +15,8 @@ It shows how to incorporate the real time data into your redux store naturally s
 It also shows how to monitor your socket server availability.
 
 ## Installation and Usage
-There are two folders. Server and Client.
+There are two folders. **Server** and **Client**.
 
-Server folder has simple node socket server that sends a new task every 2 seconds.  Run it with ` node ./index.js` command.
+**Server** folder has simple node socket server that sends a new task every 2 seconds.  Run it with ` node ./index.js` command.
 
-Client folder renders these tasks and shows the connection status. You may turn the server on and off to see the status changes.  The main magic happens in `src/modules/tasks.js` file. This file has some comments to better understand what it does. 
+**Client** folder renders these tasks and shows the connection status. You may turn the server on and off to see the status changes.  The main magic happens in `src/modules/tasks.js` file. This file has some comments to better understand what it does. 
