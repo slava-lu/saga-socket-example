@@ -1,0 +1,29 @@
+{
+  "parser": "babel-eslint",
+  "env": {
+    "browser": true
+  },
+  "plugins": [
+    "react"
+  ],
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true,
+      "modules": true
+    }
+  },
+  "extends" : [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "airbnb-base"
+  ],
+  "rules" : {
+    "linebreak-style": "off",
+    "object-curly-spacing": "off",
+    "no-shadow": "off",
+    "react/prop-types": "off",
+    "object-curly-newline": "off",
+    "max-len": "off",
+    "func-names": "off"
+  }
+}
