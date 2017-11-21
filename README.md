@@ -21,6 +21,6 @@ There are two folders. **Server** and **Client**.
 
 **Client** folder renders these tasks and shows the connection status. You may turn the server on and off to see the status changes.  The main magic happens in `src/modules/tasks.js` file. This file has some comments to better understand what it does. 
 
-####Below is the sreenshot of the client app
+##### Below is the sreenshot of the client app
 
 <img src="https://github.com/slava-lu/saga-socket-example/blob/master/clientScreenshot.png" >
