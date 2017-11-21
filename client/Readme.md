@@ -1,1 +1,0 @@
-запускать всю эту сагу(listenServerSaga) в форке, а по SWITCH_CHANNEL_OFF делать cancel, а внутри listenServerSaga в final делать socketChannel.close()
