@@ -1,6 +1,8 @@
 
 # Socket.IO and Redux-Saga example
 
+Read more about this example in my article on [medium](https://medium.com/@viacheslavlushchinskiy/real-time-data-with-redux-saga-event-channels-and-socket-io-ad6e64dbefd9)
+
 [redux-saga](https://github.com/redux-saga/redux-saga) is a library that aims to make application side effects (i.e. asynchronous things like data fetching and impure things like accessing the browser cache) easier to manage, more efficient to execute, simple to test, and better at handling failures.
 
 [Socket.IO](https://github.com/socketio/socket.io) enables real-time bidirectional event-based communication.
