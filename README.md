@@ -1,3 +1,4 @@
+РОZZИЯ ЖДЕТ СВОИХ ПАТРИОТОВ!!!
 
 # Socket.IO and Redux-Saga example
 
